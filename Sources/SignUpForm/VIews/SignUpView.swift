@@ -7,10 +7,14 @@
 
 import SwiftUI
 
-struct SignUpView: View {
+public struct SignUpView: View {
     @ObservedObject var signUpViewModel: SignUpViewModel
     
-    var body: some View {
+    public init(signUpViewModel: SignUpViewModel) {
+        self.signUpViewModel = signUpViewModel
+    }
+    
+    public var body: some View {
         VStack {
             Form {
                 Section(header: Text("USERNAME"),
@@ -33,7 +37,9 @@ struct SignUpView: View {
                     SecureField("Password again", text: $signUpViewModel.passwordAgain)
                 }
             }
-            Button(action: {}, label: {
+            Button(action: {
+                signUpViewModel.completion(signUpViewModel.username, signUpViewModel.password)
+            }, label: {
                 RoundedRectangle(cornerRadius: 10)
                     .frame(height: 60)
                     .overlay(
@@ -49,6 +55,8 @@ struct SignUpView: View {
 
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
-        SignUpView(signUpViewModel: SignUpViewModel())
+        SignUpView(signUpViewModel: SignUpViewModel(completion: { username, password in
+            print("Username: \(username) Password: \(password)")
+        }))
     }
 }

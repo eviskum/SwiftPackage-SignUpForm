@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-enum UsernameValidationType {
+public enum UsernameValidationType {
     case standard(((String) -> Bool)? = nil)
     case email(((String) -> Bool)? = nil)
 }

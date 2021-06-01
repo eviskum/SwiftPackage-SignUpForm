@@ -8,14 +8,14 @@
 import SwiftUI
 import Combine
 
-final class SignUpViewModel: ObservableObject {
+public final class SignUpViewModel: ObservableObject {
     @Published var username = ""
     @Published var password = ""
     @Published var passwordAgain = ""
     
     @Published var usernameFieldText = "Username"
     
-    var usernameValidationType: UsernameValidationType
+    private var usernameValidationType: UsernameValidationType
     
     @Published var inlineErrorForUsername = ""
     @Published var inlineErrorForPassword = ""
@@ -23,6 +23,8 @@ final class SignUpViewModel: ObservableObject {
     @Published var isUsernameValid = false
     @Published var isPasswordValid = false
     @Published var isValid = false
+    
+    var completion: (String, String) -> Void
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -113,17 +115,25 @@ final class SignUpViewModel: ObservableObject {
     private var isFormValidPublisher: AnyPublisher<Bool, Never> {
         Publishers.CombineLatest(isPasswordValidPublisher, isUsernameValidPublisher)
             .map {
-                $0 == .valid && $1 == .valid
+                let validUsername: Bool = $1 == .valid || $1 == .validAndUnique
+                return $0 == .valid && validUsername
             }
             .eraseToAnyPublisher()
     }
     
-    init(usernameValidationType: UsernameValidationType? = nil) {
+    /// Initialize SignUpView data
+    /// - Parameters:
+    ///   - completion: Closure to call when user has completed form and signs in
+    ///   - usernameValidationType: username validation type (.standard or .email). With optional uniqueness checker closure
+    ///
+    public init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
         if let usernameValidationType = usernameValidationType {
             self.usernameValidationType = usernameValidationType
         } else {
             self.usernameValidationType = .standard(nil)
         }
+        
+        self.completion = completion
         
         switch  usernameValidationType {
         case .standard(_):
