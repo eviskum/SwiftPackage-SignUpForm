@@ -9,9 +9,9 @@ import SwiftUI
 
 public struct SignUpView: View {
     @ObservedObject var signUpViewModel: SignUpViewModel
-    
-    public init(signUpViewModel: SignUpViewModel) {
-        self.signUpViewModel = signUpViewModel
+
+    public init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
+        self.signUpViewModel = SignUpViewModel(completion: completion, usernameValidationType: usernameValidationType)
     }
     
     public var body: some View {
@@ -55,8 +55,8 @@ public struct SignUpView: View {
 
 struct SignUpView_Previews: PreviewProvider {
     static var previews: some View {
-        SignUpView(signUpViewModel: SignUpViewModel(completion: { username, password in
+        SignUpView(completion: { username, password in
             print("Username: \(username) Password: \(password)")
-        }))
+        })
     }
 }

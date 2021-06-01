@@ -8,7 +8,7 @@
 import SwiftUI
 import Combine
 
-public final class SignUpViewModel: ObservableObject {
+final class SignUpViewModel: ObservableObject {
     @Published var username = ""
     @Published var password = ""
     @Published var passwordAgain = ""
@@ -126,7 +126,7 @@ public final class SignUpViewModel: ObservableObject {
     ///   - completion: Closure to call when user has completed form and signs in
     ///   - usernameValidationType: username validation type (.standard or .email). With optional uniqueness checker closure
     ///
-    public init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
+    init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
         if let usernameValidationType = usernameValidationType {
             self.usernameValidationType = usernameValidationType
         } else {
