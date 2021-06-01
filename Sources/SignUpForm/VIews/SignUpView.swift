@@ -8,10 +8,13 @@
 import SwiftUI
 
 public struct SignUpView: View {
-    @ObservedObject var signUpViewModel: SignUpViewModel
+    @StateObject var signUpViewModel = SignUpViewModel()
+    private var completion: (String, String) -> Void
+    private var usernameValidationType: UsernameValidationType?
 
     public init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
-        self.signUpViewModel = SignUpViewModel(completion: completion, usernameValidationType: usernameValidationType)
+        self.completion = completion
+        self.usernameValidationType = usernameValidationType
     }
     
     public var body: some View {
@@ -50,6 +53,9 @@ public struct SignUpView: View {
             .padding()
             .disabled(!signUpViewModel.isValid)
         }
+        .onAppear(perform: {
+            signUpViewModel.setInit(completion: completion, usernameValidationType: usernameValidationType)
+        })
     }
 }
 

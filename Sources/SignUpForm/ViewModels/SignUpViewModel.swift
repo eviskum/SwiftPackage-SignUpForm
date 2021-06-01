@@ -120,13 +120,8 @@ final class SignUpViewModel: ObservableObject {
             }
             .eraseToAnyPublisher()
     }
-    
-    /// Initialize SignUpView data
-    /// - Parameters:
-    ///   - completion: Closure to call when user has completed form and signs in
-    ///   - usernameValidationType: username validation type (.standard or .email). With optional uniqueness checker closure
-    ///
-    init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
+
+    func setInit(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
         if let usernameValidationType = usernameValidationType {
             self.usernameValidationType = usernameValidationType
         } else {
@@ -142,6 +137,21 @@ final class SignUpViewModel: ObservableObject {
             usernameFieldText = "name@domain.abc"
         case .none:
             usernameFieldText = "Username"
+        }
+    }
+    
+    init() {
+        self.usernameValidationType = .standard(nil)
+        
+        self.completion = { username, password in
+            print("Username and Password captured")
+        }
+        
+        switch  usernameValidationType {
+        case .standard(_):
+            usernameFieldText = "Username"
+        case .email(_):
+            usernameFieldText = "name@domain.abc"
         }
 
         isFormValidPublisher
