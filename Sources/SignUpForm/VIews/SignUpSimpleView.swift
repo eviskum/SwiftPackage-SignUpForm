@@ -1,26 +1,31 @@
 //
-//  SignUpView.swift
-//  SignUpForm-Master
+//  SignUpSimpleView.swift
+//  
 //
-//  Created by Esben Viskum on 31/05/2021.
+//  Created by Esben Viskum on 23/06/2021.
 //
 
 import SwiftUI
 
-public struct SignUpView: View {
-    @StateObject var signUpViewModel = SignUpViewModel()
+public struct SignUpSimpleView: View {
+    @StateObject var signUpViewModel = SignUpSimpleViewModel()
     private var completion: (String, String) -> Void
     private var usernameValidationType: UsernameValidationType?
+    private var prefillUsername: String
 
-    public init(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
+    public init(usernameValidationType: UsernameValidationType? = nil,
+                prefillUsername: String = "",
+                completion: @escaping (String, String) -> Void) {
+        
         self.completion = completion
         self.usernameValidationType = usernameValidationType
+        self.prefillUsername = prefillUsername
     }
     
     public var body: some View {
         VStack {
             Form {
-                Section(header: Text("USERNAME"),
+                Section(header: Text("USER ID"),
                         footer: Text(signUpViewModel.inlineErrorForUsername)
                             .foregroundColor(
                                 signUpViewModel.isUsernameValid ? .primary : .red)
@@ -54,14 +59,16 @@ public struct SignUpView: View {
             .disabled(!signUpViewModel.isValid)
         }
         .onAppear(perform: {
-            signUpViewModel.setInit(completion: completion, usernameValidationType: usernameValidationType)
+            signUpViewModel.setInit(usernameValidationType: usernameValidationType,
+                                    username: prefillUsername,
+                                    completion: completion)
         })
     }
 }
 
-struct SignUpView_Previews: PreviewProvider {
+struct SignUpSimpleView_Previews: PreviewProvider {
     static var previews: some View {
-        SignUpView(completion: { username, password in
+        SignUpSimpleView(completion: { username, password in
             print("Username: \(username) Password: \(password)")
         })
     }

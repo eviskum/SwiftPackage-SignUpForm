@@ -12,6 +12,25 @@ public enum UsernameValidationType {
     case email(((String) -> Bool)? = nil)
 }
 
+public enum ResetPwdStatus {
+    case usernameNotExists
+    case unableToReset
+    case success
+}
+
+public enum SignInStatus {
+    case usernameNotExists
+    case passwordWrong
+    case unableToSignIn
+    case success
+}
+
+enum FullnameStatus {
+    case empty
+    case notLongEnough
+    case valid
+}
+
 enum UsernameStatus {
     case empty
     case notLongEnough

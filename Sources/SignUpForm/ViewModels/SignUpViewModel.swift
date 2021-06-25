@@ -8,25 +8,135 @@
 import SwiftUI
 import Combine
 
-final class SignUpViewModel: ObservableObject {
+class SignUpSimpleViewModel: SignUpViewBaseModel, ObservableObject {
+    @Published var isValid = false
+    
+    var completion: (String, String) -> Void
+
+    private var isFormValidPublisher: AnyPublisher<Bool, Never> {
+        Publishers.CombineLatest(isPasswordValidPublisher, isUsernameValidPublisher)
+            .map {
+                let validUsername: Bool = $1 == .valid || $1 == .validAndUnique
+                return $0 == .valid && validUsername
+            }
+            .eraseToAnyPublisher()
+    }
+
+    func setInit(usernameValidationType: UsernameValidationType? = nil,
+                 username: String = "",
+                 completion: @escaping (String, String) -> Void) {
+        
+        super.setInit(usernameValidationType: usernameValidationType, username: username)
+        
+        self.completion = completion
+    }
+
+    override init() {
+        
+        self.completion = { username, password in
+            print("Username and Password captured")
+        }
+
+        super.init()
+
+        isFormValidPublisher
+            .receive(on: RunLoop.main)
+            .assign(to: \.isValid, on: self)
+            .store(in: &cancellables)
+    }
+}
+
+
+class SignUpFullnameViewModel: SignUpViewBaseModel, ObservableObject {
+    @Published var fullname = ""
+    @Published var fullnameFieldText = "Fullname"
+    @Published var inlineErrorForFullname = ""
+    @Published var isFullnameValid = false
+
+    @Published var isValid = false
+    
+    var completion: (String, String, String) -> Void
+
+    private var isFullnameValidPublisher: AnyPublisher<FullnameStatus, Never> {
+        $fullname
+            .debounce(for: 0.8, scheduler: RunLoop.main)
+            .removeDuplicates()
+            .map {usr in
+                if usr.isEmpty { return FullnameStatus.empty }
+                if usr.count <= 3 { return FullnameStatus.notLongEnough }
+                return FullnameStatus.valid
+            }
+            .eraseToAnyPublisher()
+    }
+
+    private var isFormValidPublisher: AnyPublisher<Bool, Never> {
+        Publishers.CombineLatest3(isPasswordValidPublisher, isUsernameValidPublisher, isFullnameValidPublisher)
+            .map {
+                let validUsername: Bool = $1 == .valid || $1 == .validAndUnique
+                return $0 == .valid && validUsername && $2 == .valid
+            }
+            .eraseToAnyPublisher()
+    }
+
+    func setInit(usernameValidationType: UsernameValidationType? = nil,
+                 fullname: String = "", username: String = "",
+                 completion: @escaping (String, String, String) -> Void) {
+        
+        super.setInit(usernameValidationType: usernameValidationType, username: username)
+        
+        self.completion = completion
+        
+        if fullname.count > 0 { self.fullname = fullname }
+    }
+
+    override init() {
+        
+        self.completion = { fullname, username, password in
+            print("Fullname, Username and Password captured")
+        }
+
+        super.init()
+
+        isFormValidPublisher
+            .receive(on: RunLoop.main)
+            .assign(to: \.isValid, on: self)
+            .store(in: &cancellables)
+
+        isFullnameValidPublisher
+            .dropFirst()
+            .receive(on: RunLoop.main)
+            .map { fullnameStatus in
+                switch fullnameStatus {
+                case .empty:
+                    return "Fullname cannot be empty"
+                case .notLongEnough:
+                    return "Fullname is too short"
+                case .valid:
+                    return ""
+                }
+            }
+            .assign(to: \.inlineErrorForFullname, on: self)
+            .store(in: &cancellables)
+    }
+}
+
+
+class SignUpViewBaseModel {
     @Published var username = ""
     @Published var password = ""
     @Published var passwordAgain = ""
     
-    @Published var usernameFieldText = "Username"
+    @Published var usernameFieldText = "User ID"
     
-    private var usernameValidationType: UsernameValidationType
+    fileprivate var usernameValidationType: UsernameValidationType
     
     @Published var inlineErrorForUsername = ""
     @Published var inlineErrorForPassword = ""
     
     @Published var isUsernameValid = false
     @Published var isPasswordValid = false
-    @Published var isValid = false
-    
-    var completion: (String, String) -> Void
-    
-    private var cancellables = Set<AnyCancellable>()
+        
+    fileprivate var cancellables = Set<AnyCancellable>()
     
     private static let predicateStandardPassword = NSPredicate(format: "SELF MATCHES %@", "^(?=.*[a-z])(?=.*[$@$#!%*?&]).{8,}$")
     private static let emailRegEx = "(?:[a-zA-Z0-9!#$%\\&‘*+/=?\\^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%\\&'*+/=?\\^_`{|}" +
@@ -39,7 +149,7 @@ final class SignUpViewModel: ObservableObject {
     private static let predicateEmail = NSPredicate(format:"SELF MATCHES[c] %@", emailRegEx)
     
     
-    private var isUsernameValidPublisher: AnyPublisher<UsernameStatus, Never> {
+    fileprivate var isUsernameValidPublisher: AnyPublisher<UsernameStatus, Never> {
         $username
             .debounce(for: 0.8, scheduler: RunLoop.main)
             .removeDuplicates()
@@ -101,7 +211,7 @@ final class SignUpViewModel: ObservableObject {
     }
 
 
-    private var isPasswordValidPublisher: AnyPublisher<PasswordStatus, Never> {
+    fileprivate var isPasswordValidPublisher: AnyPublisher<PasswordStatus, Never> {
         Publishers.CombineLatest3(isPasswordEmptyPublisher, isPasswordsStrongPublisher, arePasswordsEqualPublisher)
             .map {
                 if $0 { return PasswordStatus.empty }
@@ -111,25 +221,18 @@ final class SignUpViewModel: ObservableObject {
             }
             .eraseToAnyPublisher()
     }
-    
-    private var isFormValidPublisher: AnyPublisher<Bool, Never> {
-        Publishers.CombineLatest(isPasswordValidPublisher, isUsernameValidPublisher)
-            .map {
-                let validUsername: Bool = $1 == .valid || $1 == .validAndUnique
-                return $0 == .valid && validUsername
-            }
-            .eraseToAnyPublisher()
-    }
 
-    func setInit(completion: @escaping (String, String) -> Void, usernameValidationType: UsernameValidationType? = nil) {
+    fileprivate func setInit(usernameValidationType: UsernameValidationType? = nil,
+                 username: String = "") {
+    
         if let usernameValidationType = usernameValidationType {
             self.usernameValidationType = usernameValidationType
         } else {
             self.usernameValidationType = .standard(nil)
         }
-        
-        self.completion = completion
-        
+                
+        if username.count > 0 { self.username = username }
+
         switch  usernameValidationType {
         case .standard(_):
             usernameFieldText = "Username"
@@ -140,24 +243,15 @@ final class SignUpViewModel: ObservableObject {
         }
     }
     
-    init() {
+    fileprivate init() {
         self.usernameValidationType = .standard(nil)
-        
-        self.completion = { username, password in
-            print("Username and Password captured")
-        }
         
         switch  usernameValidationType {
         case .standard(_):
-            usernameFieldText = "Username"
+            usernameFieldText = "User ID"
         case .email(_):
             usernameFieldText = "name@domain.abc"
         }
-
-        isFormValidPublisher
-            .receive(on: RunLoop.main)
-            .assign(to: \.isValid, on: self)
-            .store(in: &cancellables)
 
         isUsernameValidPublisher
             .receive(on: RunLoop.main)
